@@ -1,0 +1,83 @@
+import pandas as pd
+import re
+import os
+import numpy as np
+from scipy.spatial import distance
+os.listdir
+from math import*
+dic = {}
+k = 0
+for filename in os.listdir('/content/sample_data/train'):
+  f = open('/content/sample_data/train/'+filename,'r',encoding='utf-8')
+  text = f.read()
+  text = text[:1000].replace('\n', ' ').lower()
+  for i in range(len(text)-1):
+    str = ''
+    for j in range(2):
+      str=str+text[i+j]
+    if str not in dic.keys():
+      dic[str] = k
+      k+=1
+
+dic = dict(sorted(dic.items(), key=lambda item: item[1]))
+
+#print(dic)
+def into_sentences():
+  vectors_of_all_sentences = []
+  counter = 0
+  d = 0 #счетчик для языков
+  cluster_mass_centers =[]
+  for i in range(len(dic)):
+    cluster_mass_centers.append([0]*len(dic))
+  for filename in os.listdir('/content/sample_data/train'):
+    
+    f = open('/content/sample_data/train/'+filename,'r',encoding='utf-8')
+    text_ = f.read()
+    text_ = text_[:1000].replace('\n', ' ').lower()
+    #split_regex = re.compile(r'[.|!|?|…]')
+    #sentences = filter(lambda t: t, [t.strip() for t in split_regex.split(text_)])
+
+    sentences = text_.split('.')
+    sentences = list(filter(None,sentences))
+    for s in sentences:
+      #if s == '':
+      #  del s
+ 
+      v = [0]*len(dic)
+      for i in range(len(dic)):
+        if list(dic.keys())[i] in s:
+          v[i] = s.count(list(dic.keys())[i])
+          cluster_mass_centers[d][i] += v[i]
+      v.append(filename)
+      
+      d = d +1   
+      #print(v)
+      vectors_of_all_sentences.append(v)  
+  return vectors_of_all_sentences, cluster_mass_centers
+a,b = into_sentences()
+def distance(v1, v2):
+  rasst = 0
+  for i in range(len(a[0])-2):
+    rasst += np.linalg.norm(v1[i] - v2[i])
+  return rasst
+f = open('/content/sample_data/test/testing.txt','r',encoding='utf-8')
+vvod = f.read()
+vvod = vvod[:1000].replace('\n', ' ').lower()
+vv = [0]*len(dic)
+for i in range(len(dic)):
+    if list(dic.keys())[i] in vvod:
+      vv[i] = vvod.count(list(dic.keys())[i])
+distances = [0]*len(a)
+for i in range(len(a)):
+  distances[i] = distance(vv, a[i])
+mins = []
+distances_num = list(enumerate(distances, 0))
+t_min = min(distances_num, key=lambda i : i[1])
+for i in range(27):
+  t_min = min(distances_num, key=lambda i : i[1])
+  mins.append(t_min[0])
+  distances_num.remove(t_min)
+languages = []
+for i in range(27):
+  languages.append(a[mins[i]][-1].replace('.txt', ''))
+print(max(set(languages), key = languages.count))
